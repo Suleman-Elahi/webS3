@@ -1,4 +1,9 @@
 # webS3
+
+![webS3 UI](https://res.cloudinary.com/suleman/image/upload/v1733921445/webS31.png)
+
+![webS3 Video Player](https://res.cloudinary.com/suleman/image/upload/v1733921445/webS32.png)
+
 A very simple web app to display all files from S3, and maybe view/play/download them.
 
 This is a simple tool to display all files from a S3 bucket and display all the files from it. It can play videos (in video.js player) and display images.
@@ -28,6 +33,12 @@ If you are using the custom domain for the s3 bucket then you must set `BUCKET_D
     AWS_SECRET_ACCESS_KEY
     AWS_BUCKET_NAME
     
+`PGSQL_URI` can be set to a postgres database in this format: `postgresql://USER:PASSWSORD@HOST:5432/DATABASE` 
+
+If you are using Vercel's free Postgres DB then must append `?sslmode=require` in the end of the database URI above.
+
+Or, if you want to SQLite for temp/local use on PC or VPS then just set `PGSQL_URI` to: `sqlite:///files.db`    (it will not work on Vercel as it gives you read-only system)
+
 I created it for a simple use case of mine.
 
 Feel free to extend it. In future I might add the ability to delete and upload files as well.
