@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, jsonify
-from models import db, File
+from .models import db, File
 import boto3
 import os
 
