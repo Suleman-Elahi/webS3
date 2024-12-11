@@ -4,7 +4,7 @@ import boto3
 import os
 
 app = Flask(__name__, static_url_path='/static')
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///files.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('PGSQL_URI')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db.init_app(app)
