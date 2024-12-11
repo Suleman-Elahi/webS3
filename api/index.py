@@ -7,17 +7,21 @@ app = Flask(__name__, static_url_path='/static')
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('PGSQL_URI')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
+bucket_region = os.getenv('AWS_DEFAULT_REGION')
+bucket_name = os.getenv('AWS_BUCKET_NAME')
+bucket_domain = os.getenv('BUCKET_DOMAIN', ' ')
+
 db.init_app(app)
 
 s3 = boto3.client(
     's3',
     aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
     aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),
-    region_name=os.getenv('AWS_DEFAULT_REGION')
+    region_name=bucket_region
 )
 
-bucket_name = os.getenv('AWS_BUCKET_NAME')
-
+final_url = ''
+    
 with app.app_context():
     db.create_all()  # Create tables if they don't exist
 
@@ -73,7 +77,7 @@ def sync_files():
                     key=file['Key'],
                     size=file['Size'],
                     file_type=file['Key'].split('.')[-1],  # Extract file type from extension
-                    url=f'https://{bucket_name}/{file["Key"]}'
+                    url = f'https://{bucket_name}/{file["Key"]}' if bucket_name == bucket_domain else f'https://s3.{bucket_region}.amazonaws.com/{bucket_name}/{file["Key"]}'
                 )
                 db.session.add(new_file)
         db.session.commit()
