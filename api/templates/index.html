@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Gallery</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://vjs.zencdn.net/7.20.3/video-js.min.css" rel="stylesheet" />
+</head>
+
+<body class="bg-gray-100">
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-3xl font-bold mb-8 text-center">S3 Files</h1>
+        <div id="file-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4"></div>
+        <div class="mt-8 flex justify-center">
+            <button id="prev-page" class="bg-blue-500 text-white px-4 py-2 rounded mr-2">Previous</button>
+            <span id="page-info" class="px-4 py-2">Page 1</span>
+            <button id="next-page" class="bg-blue-500 text-white px-4 py-2 rounded ml-2">Next</button>
+        </div>
+    </div>
+
+    <div id="file-popup" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center hidden">
+        <div class="bg-white p-4 rounded-lg max-w-3xl w-full">
+            <div class="flex justify-between items-center mb-4">
+                <h2 id="popup-title" class="text-xl font-bold"></h2>
+                <button id="close-popup" class="text-2xl">&times;</button>
+            </div>
+            <div id="popup-content" class="w-full"></div>
+        </div>
+    </div>
+    <script src="https://vjs.zencdn.net/7.20.3/video.min.js"></script>
+    <script>
+        const apiUrl = '/api/files';
+        let currentPage = 1;
+
+        function createFileThumbnail(file) {
+            const thumbnail = document.createElement('div');
+            thumbnail.className = 'cursor-pointer relative';
+
+            // Use file.url for images and file.key as the title
+            if (["jpg", "png", "jpeg", "webp"].includes(file.file_type)) {
+                thumbnail.innerHTML = `
+                <img src="${file.url}" alt="${file.key}" class="w-full h-32 object-cover rounded">
+                <p class="mt-2 text-sm truncate">${file.key || 'Untitled File'}</p>
+                <span class="absolute bottom-8 right-1 bg-gray-800 text-white text-xs px-2 py-1 rounded">${file.file_type || 'Unknown'}</span>
+            `;
+            } else {
+                thumbnail.innerHTML = `
+                <img src="{{url_for('static', filename='imgs/video_thumb.jpg')}}" alt="${file.key}" class="w-full h-32 object-cover rounded">
+                <p class="mt-2 text-sm truncate">${file.key || 'Untitled File'}</p>
+                <span class="absolute bottom-8 right-1 bg-gray-800 text-white text-xs px-2 py-1 rounded">${file.file_type || 'Unknown'}</span>
+            `;
+            }
+            thumbnail.addEventListener('click', () => openFilePopup(file));
+            return thumbnail;
+        }
+
+        function displayFiles(files) {
+            const fileGrid = document.getElementById('file-grid');
+            fileGrid.innerHTML = '';
+            files.forEach(file => fileGrid.appendChild(createFileThumbnail(file)));
+        }
+
+        async function fetchFiles(page) {
+            try {
+                const response = await fetch(`${apiUrl}?page=${page}`);
+                const data = await response.json();
+
+                // Ensure proper rendering of files and pagination
+                displayFiles(data.files);
+                document.getElementById('page-info').textContent = `Page ${data.current_page}`;
+                document.getElementById('prev-page').disabled = data.current_page === 1;
+                document.getElementById('next-page').disabled = data.current_page === data.total_pages;
+            } catch (error) {
+                console.error('Error fetching files:', error);
+            }
+        }
+
+        function openFilePopup(file) {
+            const popup = document.getElementById('file-popup');
+            const popupTitle = document.getElementById('popup-title');
+            const popupContent = document.getElementById('popup-content');
+
+            // Populate popup content
+            popupTitle.textContent = file.key || 'Untitled File';
+            if (["png", "jpg", "jpeg", "webp"].includes(file.file_type)) {
+                popupContent.innerHTML = `<img src="${file.url}" alt="${file.key}" class="w-1/2 mx-auto h-1/2 rounded">`;
+            } else if (["mp4", "webm", "mov", "MP4"].includes(file.file_type)) {
+                popupContent.innerHTML = `<video
+                            id="popup-video"
+                            class="video-js vjs-default-skin vjs-big-play-centered mx-auto"
+                            controls
+                            preload="auto"
+                            width="640"
+                            height="360"
+                            data-setup='{}'
+                        >
+                            <source src="${file.url}" type="video/mp4">
+                        </video>`;
+                setTimeout(() => {
+                    videojs(document.getElementById('popup-video'));
+                }, 0);
+            } else {
+                popupContent.innerHTML = `<p class="text-center">Preview not available for this file type.</p>`;
+            }
+
+            // Show the popup
+            popup.classList.remove('hidden');
+
+            // Close popup logic
+            document.getElementById('close-popup').addEventListener('click', () => {
+                popup.classList.add('hidden');
+                var oldPlayer = document.getElementById('popup-video');
+                 videojs(oldPlayer).dispose();
+            });
+        }
+
+        document.getElementById('prev-page').addEventListener('click', () => {
+            if (currentPage > 1) {
+                currentPage--;
+                fetchFiles(currentPage);
+            }
+        });
+
+        document.getElementById('next-page').addEventListener('click', () => {
+            currentPage++;
+            fetchFiles(currentPage);
+        });
+
+        // Initial fetch
+        fetchFiles(currentPage);
+    </script>
+</body>
+
+</html>
